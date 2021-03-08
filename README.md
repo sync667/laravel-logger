@@ -39,6 +39,7 @@ Laravel logger is an activity event logger for your Laravel or Lumen application
 |Routing Events can recording using middleware|
 |Records activity timestamps|
 |Records activity description|
+|Records activity details (optional)|
 |Records activity user type with crawler detection.|
 |Records activity Method|
 |Records activity Route|
@@ -46,6 +47,7 @@ Laravel logger is an activity event logger for your Laravel or Lumen application
 |Records activity User Agent|
 |Records activity Browser Language|
 |Records activity referrer|
+|Customizable activity model|
 |Activity panel dashboard|
 |Individual activity drilldown report dashboard|
 |Activity Drilldown looks up Id Address meta information|
@@ -160,6 +162,7 @@ LARAVEL_LOGGER_ROLES_ENABLED=true
 LARAVEL_LOGGER_ROLES_MIDDLWARE=role:admin
 LARAVEL_LOGGER_MIDDLEWARE_ENABLED=true
 LARAVEL_LOGGER_MIDDLEWARE_EXCEPT=
+LARAVEL_LOGGER_ACTIVITY_MODEL=jeremykenedy\LaravelLogger\App\Models\Activity
 LARAVEL_LOGGER_USER_MODEL=App\User
 LARAVEL_LOGGER_USER_ID_FIELD=id
 LARAVEL_LOGGER_DISABLE_ROUTES=false
@@ -216,20 +219,25 @@ When using the trait you can customize the event description.
 To use the trait:
 1. Include the call in the head of your class file:
 
-```php
-    use jeremykenedy\LaravelLogger\App\Http\Traits\ActivityLogger;
-```
+    ```php
+        use jeremykenedy\LaravelLogger\App\Http\Traits\ActivityLogger;
+    ```
 
 2. Include the trait call in the opening of your class:
 
-```php
-    use ActivityLogger;
-```
+    ```php
+        use ActivityLogger;
+    ```
 
 3. You can record the activity my calling the traits method:
-```
-    ActivityLogger::activity("Logging this activity.");
-```
+    ```
+        ActivityLogger::activity("Logging this activity.");
+    ```
+
+    Or as bellow to include extended activity details:
+    ```
+        ActivityLogger::activity("Logging this activity.", "Additional activity details.");
+    ```
 
 ### Routes
 ##### Laravel Activity Dashbaord Routes
@@ -377,7 +385,7 @@ LARAVEL_LOGGER_SEARCH_ENABLE=true
 
 ### Opening an Issue
 Before opening an issue there are a couple of considerations:
-* A **star** on this project shows support and is way to say thank you to all the contributors. If you open an issue without a star, *your issue may be closed without consideration.* Thank you for understanding and the support. You are all awesome!
+* You are all awesome!
 * **Read the instructions** and make sure all steps were *followed correctly*.
 * **Check** that the issue is not *specific to your development environment* setup.
 * **Provide** *duplication steps*.

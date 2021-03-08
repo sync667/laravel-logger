@@ -2,27 +2,28 @@
 
 namespace jeremykenedy\LaravelLogger\App\Http\Traits;
 
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Request;
+use Illuminate\Support\Facades\Validator;
 use Jaybizzle\LaravelCrawlerDetect\Facades\LaravelCrawlerDetect as Crawler;
-use jeremykenedy\LaravelLogger\App\Models\Activity;
-use Validator;
 
 trait ActivityLogger
 {
     /**
      * Laravel Logger Log Activity.
      *
-     * @param string $description
+     * @param null $description
+     * @param null $details
      *
      * @return void
      */
-    public static function activity($description = null)
+    public static function activity($description = null, $details = null)
     {
         $userType = trans('LaravelLogger::laravel-logger.userTypes.guest');
         $userId = null;
 
-        if (\Auth::check()) {
+        if (Auth::check()) {
             $userType = trans('LaravelLogger::laravel-logger.userTypes.registered');
             $userIdField = config('LaravelLogger.defaultUserIDField');
             $userId = Request::user()->{$userIdField};
@@ -30,7 +31,9 @@ trait ActivityLogger
 
         if (Crawler::isCrawler()) {
             $userType = trans('LaravelLogger::laravel-logger.userTypes.crawler');
-            $description = $userType.' '.trans('LaravelLogger::laravel-logger.verbTypes.crawled').' '.Request::fullUrl();
+            if (is_null($description)) {
+                $description = $userType.' '.trans('LaravelLogger::laravel-logger.verbTypes.crawled').' '.Request::fullUrl();
+            }
         }
 
         if (!$description) {
@@ -59,6 +62,7 @@ trait ActivityLogger
 
         $data = [
             'description'   => $description,
+            'details'       => $details,
             'userType'      => $userType,
             'userId'        => $userId,
             'route'         => Request::fullUrl(),
@@ -70,7 +74,7 @@ trait ActivityLogger
         ];
 
         // Validation Instance
-        $validator = Validator::make($data, Activity::Rules([]));
+        $validator = Validator::make($data, config('laravel-logger.defaultActivityModel')::rules());
         if ($validator->fails()) {
             $errors = self::prepareErrorMessage($validator->errors(), $data);
             if (config('LaravelLogger.logDBActivityLogFailuresToFile')) {
@@ -90,8 +94,9 @@ trait ActivityLogger
      */
     private static function storeActivity($data)
     {
-        Activity::create([
+        config('laravel-logger.defaultActivityModel')::create([
             'description'   => $data['description'],
+            'details'       => $data['details'],
             'userType'      => $data['userType'],
             'userId'        => $data['userId'],
             'route'         => $data['route'],

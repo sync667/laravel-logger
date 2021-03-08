@@ -10,7 +10,6 @@ use Illuminate\Http\Request;
 use Illuminate\Routing\Controller as BaseController;
 use jeremykenedy\LaravelLogger\App\Http\Traits\IpAddressDetails;
 use jeremykenedy\LaravelLogger\App\Http\Traits\UserAgentDetails;
-use jeremykenedy\LaravelLogger\App\Models\Activity;
 
 class LaravelLoggerController extends BaseController
 {
@@ -51,7 +50,7 @@ class LaravelLoggerController extends BaseController
         $collectionItems->map(function ($collectionItem) {
             $eventTime = Carbon::parse($collectionItem->updated_at);
             $collectionItem['timePassed'] = $eventTime->diffForHumans();
-            $collectionItem['userAgentDetails'] = UserAgentDetails::details($collectionItem->useragent);
+            $collectionItem['userAgentDetails'] = UserAgentDetails::details($collectionItem->userAgent);
             $collectionItem['langDetails'] = UserAgentDetails::localeLang($collectionItem->locale);
             $collectionItem['userDetails'] = config('LaravelLogger.defaultUserModel')::find($collectionItem->userId);
 
@@ -69,14 +68,14 @@ class LaravelLoggerController extends BaseController
     public function showAccessLog(Request $request)
     {
         if (config('LaravelLogger.loggerPaginationEnabled')) {
-            $activities = Activity::orderBy('created_at', 'desc');
+            $activities = config('laravel-logger.defaultActivityModel')::orderBy('created_at', 'desc');
             if (config('LaravelLogger.enableSearch')) {
                 $activities = $this->searchActivityLog($activities, $request);
             }
             $activities = $activities->paginate(config('LaravelLogger.loggerPaginationPerPage'));
             $totalActivities = $activities->total();
         } else {
-            $activities = Activity::orderBy('created_at', 'desc');
+            $activities = config('laravel-logger.defaultActivityModel')::orderBy('created_at', 'desc');
 
             if (config('LaravelLogger.enableSearch')) {
                 $activities = $this->searchActivityLog($activities, $request);
@@ -108,22 +107,22 @@ class LaravelLoggerController extends BaseController
      */
     public function showAccessLogEntry(Request $request, $id)
     {
-        $activity = Activity::findOrFail($id);
+        $activity = config('laravel-logger.defaultActivityModel')::findOrFail($id);
 
         $userDetails = config('LaravelLogger.defaultUserModel')::find($activity->userId);
-        $userAgentDetails = UserAgentDetails::details($activity->useragent);
+        $userAgentDetails = UserAgentDetails::details($activity->userAgent);
         $ipAddressDetails = IpAddressDetails::checkIP($activity->ipAddress);
         $langDetails = UserAgentDetails::localeLang($activity->locale);
         $eventTime = Carbon::parse($activity->created_at);
         $timePassed = $eventTime->diffForHumans();
 
         if (config('LaravelLogger.loggerPaginationEnabled')) {
-            $userActivities = Activity::where('userId', $activity->userId)
+            $userActivities = config('laravel-logger.defaultActivityModel')::where('userId', $activity->userId)
             ->orderBy('created_at', 'desc')
             ->paginate(config('LaravelLogger.loggerPaginationPerPage'));
             $totalUserActivities = $userActivities->total();
         } else {
-            $userActivities = Activity::where('userId', $activity->userId)
+            $userActivities = config('laravel-logger.defaultActivityModel')::where('userId', $activity->userId)
             ->orderBy('created_at', 'desc')
             ->get();
             $totalUserActivities = $userActivities->count();
@@ -155,7 +154,7 @@ class LaravelLoggerController extends BaseController
      */
     public function clearActivityLog(Request $request)
     {
-        $activities = Activity::all();
+        $activities = config('laravel-logger.defaultActivityModel')::all();
         foreach ($activities as $activity) {
             $activity->delete();
         }
@@ -171,12 +170,12 @@ class LaravelLoggerController extends BaseController
     public function showClearedActivityLog()
     {
         if (config('LaravelLogger.loggerPaginationEnabled')) {
-            $activities = Activity::onlyTrashed()
+            $activities = config('laravel-logger.defaultActivityModel')::onlyTrashed()
             ->orderBy('created_at', 'desc')
             ->paginate(config('LaravelLogger.loggerPaginationPerPage'));
             $totalActivities = $activities->total();
         } else {
-            $activities = Activity::onlyTrashed()
+            $activities = config('laravel-logger.defaultActivityModel')::onlyTrashed()
             ->orderBy('created_at', 'desc')
             ->get();
             $totalActivities = $activities->count();
@@ -205,7 +204,7 @@ class LaravelLoggerController extends BaseController
         $activity = self::getClearedActvity($id);
 
         $userDetails = config('LaravelLogger.defaultUserModel')::find($activity->userId);
-        $userAgentDetails = UserAgentDetails::details($activity->useragent);
+        $userAgentDetails = UserAgentDetails::details($activity->userAgent);
         $ipAddressDetails = IpAddressDetails::checkIP($activity->ipAddress);
         $langDetails = UserAgentDetails::localeLang($activity->locale);
         $eventTime = Carbon::parse($activity->created_at);
@@ -233,7 +232,7 @@ class LaravelLoggerController extends BaseController
      */
     private static function getClearedActvity($id)
     {
-        $activity = Activity::onlyTrashed()->where('id', $id)->get();
+        $activity = config('laravel-logger.defaultActivityModel')::onlyTrashed()->where('id', $id)->get();
         if (count($activity) != 1) {
             return abort(404);
         }
@@ -250,7 +249,7 @@ class LaravelLoggerController extends BaseController
      */
     public function destroyActivityLog(Request $request)
     {
-        $activities = Activity::onlyTrashed()->get();
+        $activities = config('laravel-logger.defaultActivityModel')::onlyTrashed()->get();
         foreach ($activities as $activity) {
             $activity->forceDelete();
         }
@@ -267,7 +266,7 @@ class LaravelLoggerController extends BaseController
      */
     public function restoreClearedActivityLog(Request $request)
     {
-        $activities = Activity::onlyTrashed()->get();
+        $activities = config('laravel-logger.defaultActivityModel')::onlyTrashed()->get();
         foreach ($activities as $activity) {
             $activity->restore();
         }
